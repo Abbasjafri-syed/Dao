@@ -33,21 +33,20 @@ contract DaoMaking {
     mapping(uint256 => proposal) public Proposal_Id;
 
     // checking either address is Smart contract or EOA
-    function checkAddress(address _addr) public view returns (string memory) {
+    function checkAddress(address _addr) public view returns (bool) {
         uint256 length;
         assembly {
             length := extcodesize(_addr)
         }
         if (length > 0) {
-            return "Contract Account";
+            return true;
         }
-        return "EOA Account";
+        return false;
     }
 
     //Using modifier for security to ensure only EOA can interact
     modifier verifyAddress() {
-        // require(checkAddress(msg.sender).uint256 length > 0, 'Contract not allowed');
-        require(msg.sender == tx.origin, "Contract not allowed");
+        require(!checkAddress(msg.sender), "Contract not allowed to Interact");
         require(msg.sender != address(0), "Null Address not allowed");
         _;
     }
