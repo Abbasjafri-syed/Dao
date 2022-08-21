@@ -16,19 +16,36 @@ contract DaoProject is Governor, GovernorCountingSimple, GovernorVotes, Governor
         GovernorTimelockControl(_timelock)
     {}
 
-    function votingDelay() public pure override returns (uint256) {
-        return 100; // 100 block
+    function votingDelay(uint256 blockHeight) public pure override returns (uint256) {
+        return blockHeight;
     }
 
-    function votingPeriod() public pure override returns (uint256) {
-        return 45818; // 1 week
+    function votingPeriod(uint256 timeline) public pure override returns (uint256) {
+        return timeline;
     }
 
-    function proposalThreshold() public pure override returns (uint256) {
-        return 2e18;
+    function proposalThreshold(uint256 funds) public pure override returns (uint256) {
+        return funds;
+    }
+
+    function checkAddress(address _addr) public view returns (bool) {
+        uint256 length;
+        assembly {
+        length := extcodesize(_addr)
+        }
+        if (length > 0) {
+            return true;
+        }
+        return false;
+    }
+
+modifier Verifyaddress(){
+       require(!checkAddress(msg.sender), 'Contract not allowed to interact');
+       _;
     }
 
     // The following functions are overrides required by Solidity.
+    
 
     function quorum(uint256 blockNumber)
         public
@@ -50,7 +67,7 @@ contract DaoProject is Governor, GovernorCountingSimple, GovernorVotes, Governor
 
     function propose(address[] memory targets, uint256[] memory values, bytes[] memory calldatas, string memory description)
         public
-        override(Governor, IGovernor)
+        override Verifyaddress(Governor, IGovernor)
         returns (uint256)
     {
         return super.propose(targets, values, calldatas, description);
@@ -65,7 +82,7 @@ contract DaoProject is Governor, GovernorCountingSimple, GovernorVotes, Governor
 
     function _cancel(address[] memory targets, uint256[] memory values, bytes[] memory calldatas, bytes32 descriptionHash)
         internal
-        override(Governor, GovernorTimelockControl)
+        override Verifyaddress(Governor, GovernorTimelockControl)
         returns (uint256)
     {
         return super._cancel(targets, values, calldatas, descriptionHash);
