@@ -1,49 +1,41 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.14;
 
 import "@openzeppelin/contracts/governance/Governor.sol";
+import "@openzeppelin/contracts/governance/extensions/GovernorSettings.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorVotesQuorumFraction.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol";
 
-contract DaoProject is Governor, GovernorCountingSimple, GovernorVotes, GovernorVotesQuorumFraction, GovernorTimelockControl {
+contract DaoToken is Governor, GovernorSettings, GovernorCountingSimple, GovernorVotes, GovernorVotesQuorumFraction, GovernorTimelockControl {
     constructor(IVotes _token, TimelockController _timelock)
-        Governor("DaoProject")
+        Governor("Dao token")
+        GovernorSettings(blockHeight, timeline, funds) // showing error
         GovernorVotes(_token)
         GovernorVotesQuorumFraction(4)
         GovernorTimelockControl(_timelock)
     {}
 
-    function votingDelay() public pure override returns (uint256) {
-        return 10; // 10 block
-    }
-
-    function votingPeriod() public pure override returns (uint256) {
-        return 45818; // 1 week
-    }
-
-    function proposalThreshold() public pure override returns (uint256) {
-        return 2e18;
-    }
-
-    function checkAddress(address _addr) public view returns (bool) {
-        uint256 length;
-        assembly {
-        length := extcodesize(_addr)
-        }
-        if (length > 0) {
-            return true;
-        }
-        return false;
-    }
-
-modifier Verifyaddress(){
-       require(!checkAddress(msg.sender), 'Contract not allowed to interact');
-       _;
-    }
-
     // The following functions are overrides required by Solidity.
+
+    function votingDelay(uint256 blockHeight)
+        public
+        view
+        override(IGovernor, GovernorSettings)
+        returns (uint256)
+    {
+        return super.votingDelay(blockHeight);
+    }
+
+    function votingPeriod(uint256 timeline)
+        public
+        view
+        override(IGovernor, GovernorSettings)
+        returns (uint256)
+    {
+        return super.votingPeriod(timeline);
+    }
 
     function quorum(uint256 blockNumber)
         public
@@ -63,12 +55,21 @@ modifier Verifyaddress(){
         return super.state(proposalId);
     }
 
-    function propose Verifyaddress(address[] memory targets, uint256[] memory values, bytes[] memory calldatas, string memory description)
+    function propose(address[] memory targets, uint256[] memory values, bytes[] memory calldatas, string memory description)
         public
         override(Governor, IGovernor)
         returns (uint256)
     {
         return super.propose(targets, values, calldatas, description);
+    }
+
+    function proposalThreshold(uint256 funds)
+        public
+        view
+        override(Governor, GovernorSettings)
+        returns (uint256)
+    {
+        return super.proposalThreshold(funds);
     }
 
     function _execute(uint256 proposalId, address[] memory targets, uint256[] memory values, bytes[] memory calldatas, bytes32 descriptionHash)
