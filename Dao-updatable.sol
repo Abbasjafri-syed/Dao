@@ -8,33 +8,50 @@ import "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorVotesQuorumFraction.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol";
 
-contract DaoToken is Governor, GovernorSettings, GovernorCountingSimple, GovernorVotes, GovernorVotesQuorumFraction, GovernorTimelockControl {
+
+contract DaoMaking is Governor, GovernorSettings, GovernorCountingSimple, GovernorVotes, GovernorVotesQuorumFraction, GovernorTimelockControl {
     constructor(IVotes _token, TimelockController _timelock)
-        Governor("Dao token")
-        GovernorSettings(blockHeight, timeline, funds) // showing error
+        Governor("Dao Making")
+        GovernorSettings(10, 45189, 2e18)
         GovernorVotes(_token)
         GovernorVotesQuorumFraction(4)
         GovernorTimelockControl(_timelock)
     {}
 
-    // The following functions are overrides required by Solidity.
-
-    function votingDelay(uint256 blockHeight)
-        public
-        view
-        override(IGovernor, GovernorSettings)
-        returns (uint256)
-    {
-        return super.votingDelay(blockHeight);
+function checkAddress(address _addr) public view returns (bool) {
+        uint256 length;
+        assembly {
+        length := extcodesize(_addr)
+        }
+        if (length > 0) {
+            return true;
+        }
+        return false;
     }
 
-    function votingPeriod(uint256 timeline)
+modifier Verifyaddress(){
+       require(!checkAddress(msg.sender), 'Contract not allowed to interact');
+       _;
+    }
+
+    // The following functions are overrides required by Solidity.
+
+    function votingDelay()
         public
         view
         override(IGovernor, GovernorSettings)
         returns (uint256)
     {
-        return super.votingPeriod(timeline);
+        return super.votingDelay();
+    }
+
+    function votingPeriod()
+        public
+        view
+        override(IGovernor, GovernorSettings)
+        returns (uint256)
+    {
+        return super.votingPeriod();
     }
 
     function quorum(uint256 blockNumber)
@@ -56,20 +73,20 @@ contract DaoToken is Governor, GovernorSettings, GovernorCountingSimple, Governo
     }
 
     function propose(address[] memory targets, uint256[] memory values, bytes[] memory calldatas, string memory description)
-        public
+        public Verifyaddress
         override(Governor, IGovernor)
         returns (uint256)
     {
         return super.propose(targets, values, calldatas, description);
     }
 
-    function proposalThreshold(uint256 funds)
+    function proposalThreshold()
         public
         view
         override(Governor, GovernorSettings)
         returns (uint256)
     {
-        return super.proposalThreshold(funds);
+        return super.proposalThreshold();
     }
 
     function _execute(uint256 proposalId, address[] memory targets, uint256[] memory values, bytes[] memory calldatas, bytes32 descriptionHash)
